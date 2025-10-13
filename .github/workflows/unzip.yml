@@ -1,0 +1,31 @@
+name: Extract ZIP on Push
+
+on:
+  push:
+    paths:
+      - "*.zip"
+
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Unzip project
+        run: |
+          ZIPFILE=$(ls *.zip | head -n 1)
+          mkdir extracted
+          unzip -q "$ZIPFILE" -d extracted
+          rm "$ZIPFILE"
+          cp -r extracted/* .
+          rm -rf extracted
+
+      - name: Commit extracted content
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "Extracted ZIP automatically" || echo "No changes"
+          git push
