@@ -8,24 +8,46 @@ on:
 jobs:
   unzip:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Unzip project
+      - name: Find and extract ZIP
+        shell: bash
         run: |
-          ZIPFILE=$(ls *.zip | head -n 1)
-          mkdir extracted
+          set -euo pipefail
+          ZIPFILE=$(ls *.zip 2>/dev/null || true)
+          if [ -z "$ZIPFILE" ]; then
+            echo "No zip file found, nothing to do."
+            exit 0
+          fi
+          echo "Extracting $ZIPFILE"
+          mkdir -p extracted
           unzip -q "$ZIPFILE" -d extracted
-          rm "$ZIPFILE"
+          rm -f "$ZIPFILE"
+          # copy extracted contents into repo root, preserve hidden files
+          shopt -s dotglob
           cp -r extracted/* .
+          shopt -u dotglob
           rm -rf extracted
 
       - name: Commit extracted content
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add .
-          git commit -m "Extracted ZIP automatically" || echo "No changes"
-          git push
+          # stage new/changed files, but avoid committing the workflow run logs or .git
+          git add -A
+          # exit if nothing to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          # include [skip ci] to avoid retriggering workflows on this push
+          git commit -m "Extracted ZIP automatically [skip ci]"
+          # push using GITHUB_TOKEN provided by checkout action
+          git push origin HEAD:${{ github.ref_name }}
