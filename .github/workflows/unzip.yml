@@ -5,6 +5,9 @@ on:
     paths:
       - "*.zip"
 
+permissions:
+  contents: write
+
 jobs:
   unzip:
     runs-on: ubuntu-latest
@@ -12,6 +15,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
       - name: Find and extract ZIP
@@ -23,11 +27,9 @@ jobs:
             echo "No zip file found, nothing to do."
             exit 0
           fi
-          echo "Extracting $ZIPFILE"
           mkdir -p extracted
           unzip -q "$ZIPFILE" -d extracted
           rm -f "$ZIPFILE"
-          # copy extracted contents into repo root, preserve hidden files
           shopt -s dotglob
           cp -r extracted/* .
           shopt -u dotglob
@@ -40,14 +42,20 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          # stage new/changed files, but avoid committing the workflow run logs or .git
           git add -A
-          # exit if nothing to commit
           if git diff --staged --quiet; then
             echo "No changes to commit."
             exit 0
           fi
-          # include [skip ci] to avoid retriggering workflows on this push
           git commit -m "Extracted ZIP automatically [skip ci]"
-          # push using GITHUB_TOKEN provided by checkout action
-          git push origin HEAD:${{ github.ref_name }}
+
+          # Jika branch target dilindungi, push ke new branch dan buat PR
+          if gh --version >/dev/null 2>&1; then
+            # gunakan GitHub CLI jika tersedia (recommended)
+            BRANCH="extract-zip-${{ github.run_id }}"
+            git push origin HEAD:"$BRANCH"
+            gh pr create --title "Auto-extract ZIP" --body "Auto-extracted ZIP from push" --base "${{ github.ref_name }}" --head "$BRANCH"
+          else
+            # fallback: coba push ke current branch (akan gagal jika dilindungi)
+            git push origin HEAD:${{ github.ref_name }}
+          fi
