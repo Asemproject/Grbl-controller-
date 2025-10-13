@@ -7,13 +7,13 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   unzip:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -24,7 +24,7 @@ jobs:
           set -euo pipefail
           ZIPFILE=$(ls *.zip 2>/dev/null || true)
           if [ -z "$ZIPFILE" ]; then
-            echo "No zip file found, nothing to do."
+            echo "No zip file found."
             exit 0
           fi
           mkdir -p extracted
@@ -35,27 +35,23 @@ jobs:
           shopt -u dotglob
           rm -rf extracted
 
-      - name: Commit extracted content
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Commit changes
         run: |
-          set -euo pipefail
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add -A
           if git diff --staged --quiet; then
-            echo "No changes to commit."
+            echo "No changes"
             exit 0
           fi
           git commit -m "Extracted ZIP automatically [skip ci]"
 
-          # Jika branch target dilindungi, push ke new branch dan buat PR
-          if gh --version >/dev/null 2>&1; then
-            # gunakan GitHub CLI jika tersedia (recommended)
-            BRANCH="extract-zip-${{ github.run_id }}"
-            git push origin HEAD:"$BRANCH"
-            gh pr create --title "Auto-extract ZIP" --body "Auto-extracted ZIP from push" --base "${{ github.ref_name }}" --head "$BRANCH"
-          else
-            # fallback: coba push ke current branch (akan gagal jika dilindungi)
-            git push origin HEAD:${{ github.ref_name }}
-          fi
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Extracted ZIP automatically [skip ci]"
+          branch: extract-zip-${{ github.run_id }}
+          title: "Auto-extract ZIP"
+          body: "Auto-extracted ZIP from push"
+          base: ${{ github.ref_name }}
