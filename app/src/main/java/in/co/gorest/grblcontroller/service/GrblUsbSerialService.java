@@ -271,45 +271,47 @@ public class GrblUsbSerialService extends Service {
     };
 
     private void findSerialPortDevice() {
-        // This snippet will try to open the first encountered usb device connected, excluding usb root hubs
-        try {
-            HashMap<String, UsbDevice> usbDevices = usbManager.getDeviceList();
-            if (!usbDevices.isEmpty()) {
-                boolean keep = true;
-                for (Map.Entry<String, UsbDevice> entry : usbDevices.entrySet()) {
-                    device = entry.getValue();
-                    int deviceVID = device.getVendorId();
-                    int devicePID = device.getProductId();
-
-                    if (deviceVID != 0x1d6b && (devicePID != 0x0001 && devicePID != 0x0002 && devicePID != 0x0003) && deviceVID != 0x5c6 && devicePID != 0x904c) {
-
-                        // There is a device connected to our Android device. Try to open it as a Serial Port.
-                        requestUserPermission();
-                        keep = false;
-                    } else {
-                        connection = null;
-                        device = null;
-                    }
-
-                    if (!keep)
-                        break;
-                }
-                if (!keep) {
-                    // There is no USB devices connected (but usb host were listed). Send an intent to MainActivity.
-                    Intent intent = new Intent(ACTION_NO_USB);
-                    sendBroadcast(intent);
-                }
-            } else {
-                // There is no USB devices connected. Send an intent to MainActivity
-                Intent intent = new Intent(ACTION_NO_USB);
-                sendBroadcast(intent);
-            }
-        }catch (NullPointerException e){
-            // There is no USB devices connected. Send an intent to MainActivity
-            Intent intent = new Intent(ACTION_NO_USB);
-            sendBroadcast(intent);
+    try {
+        HashMap<String, UsbDevice> usbDevices = usbManager.getDeviceList();
+        if (usbDevices.isEmpty()) {
+            sendBroadcast(new Intent(ACTION_NO_USB));
+            return;
         }
+
+        boolean found = false;
+        for (Map.Entry<String, UsbDevice> entry : usbDevices.entrySet()) {
+            device = entry.getValue();
+            int deviceVID = device.getVendorId();
+            int devicePID = device.getProductId();
+
+            // ==========================
+            // ✅ Filter device STM32 grblHAL
+            // Vendor ID 0x0483 = STMicroelectronics
+            // (STM32 CDC USB)
+            // ==========================
+            if (deviceVID == 0x0483) {
+                found = true;
+                requestUserPermission();
+                break;
+            }
+
+            // Jika bukan STM32, tapi masih USB CDC (Arduino/CH340/FTDI)
+            if (deviceVID != 0x1d6b && devicePID != 0x0001 && devicePID != 0x0002 && devicePID != 0x0003) {
+                found = true;
+                requestUserPermission();
+                break;
+            }
+        }
+
+        if (!found) {
+            // Tidak ada device valid ditemukan
+            sendBroadcast(new Intent(ACTION_NO_USB));
+        }
+
+    } catch (Exception e) {
+        sendBroadcast(new Intent(ACTION_NO_USB));
     }
+}
 
     private void setFilter() {
         IntentFilter filter = new IntentFilter();
