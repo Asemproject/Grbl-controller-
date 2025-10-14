@@ -1,13 +1,14 @@
-// root build.gradle
+// Root build.gradle (konfigurasi utama)
 buildscript {
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        // gunakan AGP 7.4.2 (stabil untuk compileSdk 33)
+        // Versi plugin Android stabil untuk Gradle 7.5
         classpath 'com.android.tools.build:gradle:7.4.2'
-        classpath 'com.google.gms:google-services:4.4.0' // jika pakai google services
+        // Jika kamu pakai Firebase atau Google Services, ini opsional
+        classpath 'com.google.gms:google-services:4.4.0'
     }
 }
 
