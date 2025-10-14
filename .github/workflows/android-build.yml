@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,9 +33,17 @@ jobs:
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace --info
 
+      - name: Upload Gradle Log
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-log
+          path: gradle-output.log
+
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
+          name: GrblHAL-Android-STM32
+          path: app/build/outputs/apk/debug/app-debug.apk        with:
           name: GrblHAL-STM32-Android
           path: app/build/outputs/apk/debug/app-debug.apk        uses: actions/upload-artifact@v4
         with:
