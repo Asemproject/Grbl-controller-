@@ -52,6 +52,11 @@
             </intent-filter>
 
         </activity>
+        <activity android:name=".ui.activity.UsbConnectionActivity" />
+<service android:name=".usb.UsbService" />
+<uses-feature android:name="android.hardware.usb.host" />
+
+        
         <activity
             android:name=".BluetoothConnectionActivity"
             android:resizeableActivity="false"
