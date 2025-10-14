@@ -25,6 +25,13 @@
             android:defaultValue="bluetooth" />
 
         <ListPreference
+            android:key="pref_firmware_type"
+            android:title="Firmware type"
+            android:entries="@array/firmware_types"
+            android:entryValues="@array/firmware_types_values"
+            android:defaultValue="auto" />
+
+        <ListPreference
             android:key="@string/usb_serial_baud_rate"
             android:icon="@drawable/ic_usb_black_24dp"
             android:title="@string/text_usb_connection_baud_rate"
