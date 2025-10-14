@@ -296,12 +296,21 @@ public class GrblUsbSerialService extends Service {
             }
 
             // Jika bukan STM32, tapi masih USB CDC (Arduino/CH340/FTDI)
-            if (deviceVID != 0x1d6b && devicePID != 0x0001 && devicePID != 0x0002 && devicePID != 0x0003) {
-                found = true;
-                requestUserPermission();
-                break;
-            }
-        }
+            if (deviceVID != 0x1d6b && (devicePID != 0x0001 && devicePID != 0x0002 && devicePID != 0x0003)
+    && deviceVID != 0x5c6 && devicePID != 0x904c) {
+
+    // ✅ Tambahkan deteksi STM32 Virtual COM Port (VID 0483 PID 5740)
+    if (deviceVID == 0x0483 && devicePID == 0x5740) {
+        // STM32 grblHAL detected
+        requestUserPermission();
+        keep = false;
+        break;
+    }
+
+    // Default fallback for other serial devices (like Arduino, CH340, FTDI)
+    requestUserPermission();
+    keep = false;
+}
 
         if (!found) {
             // Tidak ada device valid ditemukan
