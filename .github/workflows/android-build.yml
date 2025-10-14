@@ -27,15 +27,12 @@ jobs:
           fi
 
       - name: Build Debug APK (capture log)
-        env:
-          JAVA_TOOL_OPTIONS: "-Dfile.encoding=UTF8"
         run: |
           chmod +x ./gradlew
-          # jalankan gradle dan simpan log ke file
-          ./gradlew --no-daemon -Pandroid.injected.testOnly=false assembleDebug --stacktrace --info > gradle-output.log 2>&1 || true
-          # tampilkan tail agar error cepat terlihat di step log
+          ./gradlew --no-daemon assembleDebug --stacktrace --info > gradle-output.log 2>&1 || true
           echo "==== TAIL OF gradle-output.log ===="
           tail -n 200 gradle-output.log || true
+
       - name: Upload gradle-output log
         uses: actions/upload-artifact@v4
         with:
