@@ -308,6 +308,18 @@
         <item>270</item>
     </string-array>
 
+  <string-array name="firmware_types">
+        <item>Auto</item>
+        <item>GRBL</item>
+        <item>grblHAL</item>
+  </string-array>
+  
+  <string-array name="firmware_types_values">
+        <item>auto</item>
+        <item>grbl</item>
+        <item>grblhal</item>
+</string-array>
+
     <string name="text_steps_feed">Step Size | Jog Feed</string>
     <string name="text_zero_selected_axis">Zero selected axis</string>
     <string name="text_set_axis_location_in_current_wpos">set selected axis location in current coordinate system to zero | </string>
