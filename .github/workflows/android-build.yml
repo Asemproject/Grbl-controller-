@@ -26,19 +26,26 @@ jobs:
             chmod +x ./gradlew
           fi
 
-      - name: Build Debug APK
+      - name: Build Debug APK (capture log)
         env:
           JAVA_TOOL_OPTIONS: "-Dfile.encoding=UTF8"
         run: |
-          if [ -f ./gradlew ]; then
-            ./gradlew --no-daemon -Pandroid.injected.testOnly=false assembleDebug --stacktrace
-          else
-            echo "gradlew not found. Please add Gradle wrapper to the repo (gradlew, gradlew.bat, gradle/wrapper/*)."
-            exit 1
-          fi
+          chmod +x ./gradlew
+          # jalankan gradle dan simpan log ke file
+          ./gradlew --no-daemon -Pandroid.injected.testOnly=false assembleDebug --stacktrace --info > gradle-output.log 2>&1 || true
+          # tampilkan tail agar error cepat terlihat di step log
+          echo "==== TAIL OF gradle-output.log ===="
+          tail -n 200 gradle-output.log || true
+      - name: Upload gradle-output log
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-log
+          path: gradle-output.log
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: GrblHAL-Android-STM32
           path: app/build/outputs/apk/debug/app-debug.apk
+
+          
